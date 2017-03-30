@@ -1,5 +1,14 @@
 #!/usr/bin/env python
 
+__author__ = "Saulius Bartkus"
+__copyright__ = "Copyright 2017"
+
+__license__ = "GPL"
+__version__ = "1.0.1"
+__maintainer__ = "Saulius Bartkus"
+__email__ = "saulius181@yahoo.com"
+__status__ = "Production"
+
 from tkinter import *
 import random
 import math
@@ -22,11 +31,11 @@ class game_controller(object):
 						
 						if self.canvas.gettags(item)[1] == "big":
 						
-							self.canvas.data["AsteroidList"].append(self.canvas.create_polygon( self.set_asteroid_coords("medium", self.canvas.coords(item)[0], self.canvas.coords(item)[1]), outline="white", fill="", tags="asteroid medium {} {}".format(math.cos(random.uniform(1, 10)) + 1, math.sin(random.uniform(1, 10)) + 1)))
-							self.canvas.data["AsteroidList"].append(self.canvas.create_polygon( self.set_asteroid_coords("medium", self.canvas.coords(item)[0], self.canvas.coords(item)[1]), outline="white", fill="", tags="asteroid medium {} {}".format(math.cos(random.uniform(1, 10)) + 1, math.sin(random.uniform(1, 10)) + 1)))
+							self.canvas.data["AsteroidList"].append(self.canvas.create_polygon( self.set_asteroid_coords("medium", self.canvas.coords(item)[0], self.canvas.coords(item)[1]), outline="white", fill="", tags="asteroid medium {} {}".format(math.cos(random.uniform(1, 10)) * 2, math.sin(random.uniform(1, 10)) * 2)))
+							self.canvas.data["AsteroidList"].append(self.canvas.create_polygon( self.set_asteroid_coords("medium", self.canvas.coords(item)[0], self.canvas.coords(item)[1]), outline="white", fill="", tags="asteroid medium {} {}".format(math.cos(random.uniform(1, 10)) * 2, math.sin(random.uniform(1, 10)) * 2)))
 						elif self.canvas.gettags(item)[1] == "medium":
-							self.canvas.data["AsteroidList"].append(self.canvas.create_polygon( self.set_asteroid_coords("small", self.canvas.coords(item)[0], self.canvas.coords(item)[1]), outline="white", fill="", tags="asteroid small {} {}".format(math.cos(random.uniform(1, 10)) + 2, math.sin(random.uniform(1, 10)) + 2)))
-							self.canvas.data["AsteroidList"].append(self.canvas.create_polygon( self.set_asteroid_coords("small", self.canvas.coords(item)[0], self.canvas.coords(item)[1]), outline="white", fill="", tags="asteroid small {} {}".format(math.cos(random.uniform(1, 10)) + 2, math.sin(random.uniform(1, 10)) + 2)))						
+							self.canvas.data["AsteroidList"].append(self.canvas.create_polygon( self.set_asteroid_coords("small", self.canvas.coords(item)[0], self.canvas.coords(item)[1]), outline="white", fill="", tags="asteroid small {} {}".format(math.cos(random.uniform(1, 10)) * 3, math.sin(random.uniform(1, 10)) * 3)))
+							self.canvas.data["AsteroidList"].append(self.canvas.create_polygon( self.set_asteroid_coords("small", self.canvas.coords(item)[0], self.canvas.coords(item)[1]), outline="white", fill="", tags="asteroid small {} {}".format(math.cos(random.uniform(1, 10)) * 3, math.sin(random.uniform(1, 10)) * 3)))						
 						
 						self.canvas.delete(item)						
 						self.canvas.data["AsteroidList"].remove(item)
@@ -110,11 +119,14 @@ class game_controller(object):
 		
 		self.root.after(20, self.moveit)
 	
+	def	any_key(self, event=None):
+		print(event.keysym)
+		
 	def	shoot(self, event=None):
 		if self.shot:
 			pass
 		else:
-			self.canvas.data["BulletList"].append([self.canvas.create_oval(self.canvas.coords(self.ship)[0]-1, self.canvas.coords(self.ship)[1]-1, self.canvas.coords(self.ship)[0]+1, self.canvas.coords(self.ship)[1]+1, tag="bullet", outline="white"), math.cos(self.faceDir) * 5, math.sin(self.faceDir) * 5 ])
+			self.canvas.data["BulletList"].append([self.canvas.create_oval(self.canvas.coords(self.ship)[0]-1, self.canvas.coords(self.ship)[1]-1, self.canvas.coords(self.ship)[0]+1, self.canvas.coords(self.ship)[1]+1, tag="bullet", outline="white"), math.cos(self.faceDir) * 10, math.sin(self.faceDir) * 10 ])
 			self.shot = True
 			
 	def release(self, event=None):
@@ -160,8 +172,9 @@ class game_controller(object):
 		
 	def on(self, event=None):
 		self.canvas.itemconfig(self.flame, state=NORMAL)
-		if self.canvas.data["Speed"]["x"] + (math.cos(self.faceDir) * self.dirDict[event.keysym]) < 4 and self.canvas.data["Speed"]["x"] + (math.cos(self.faceDir) * self.dirDict[event.keysym]) > -4 and self.canvas.data["Speed"]["y"] + (math.sin(self.faceDir) * self.dirDict[event.keysym]) < 4 and self.canvas.data["Speed"]["y"] + (math.sin(self.faceDir) * self.dirDict[event.keysym]) > -4:
-			self.canvas.data["Speed"]["x"] += math.cos(self.faceDir) * self.dirDict[event.keysym]	
+		if self.canvas.data["Speed"]["x"] + (math.cos(self.faceDir) * self.dirDict[event.keysym]) < 4 and self.canvas.data["Speed"]["x"] + (math.cos(self.faceDir) * self.dirDict[event.keysym]) > -4:
+			self.canvas.data["Speed"]["x"] += math.cos(self.faceDir) * self.dirDict[event.keysym]
+		if self.canvas.data["Speed"]["y"] + (math.sin(self.faceDir) * self.dirDict[event.keysym]) < 4 and self.canvas.data["Speed"]["y"] + (math.sin(self.faceDir) * self.dirDict[event.keysym]) > -4:
 			self.canvas.data["Speed"]["y"] += math.sin(self.faceDir) * self.dirDict[event.keysym]
 		
 	def off(self, event=None):
@@ -184,8 +197,8 @@ class game_controller(object):
 		
 		return coords
 			
-	def generate_asteroids(self):
-		for i in range(5):
+	def generate_asteroids(self, num=5):
+		for i in range(num):
 			self.canvas.data["AsteroidList"].append(self.canvas.create_polygon( self.set_asteroid_coords("big"), outline="white", fill="", tags="asteroid big  {} {}".format(math.cos(random.uniform(1, 10)), math.sin(random.uniform(-5, 5)))))
 	
 	def __init__(self, root):
