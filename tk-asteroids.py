@@ -13,6 +13,7 @@ from tkinter import *
 import random
 import math
 import time
+import winsound
 
 class game_controller(object):
 	def moveit(self):
@@ -30,12 +31,16 @@ class game_controller(object):
 						self.canvas.data["BulletList"].remove(bullet)
 						
 						if self.canvas.gettags(item)[1] == "big":
-						
+							
+							winsound.PlaySound("bangLarge.wav", winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
 							self.canvas.data["AsteroidList"].append(self.canvas.create_polygon( self.set_asteroid_coords("medium", self.canvas.coords(item)[0], self.canvas.coords(item)[1]), outline="white", fill="", tags="asteroid medium {} {}".format(math.cos(random.uniform(1, 10)) * 2, math.sin(random.uniform(1, 10)) * 2)))
 							self.canvas.data["AsteroidList"].append(self.canvas.create_polygon( self.set_asteroid_coords("medium", self.canvas.coords(item)[0], self.canvas.coords(item)[1]), outline="white", fill="", tags="asteroid medium {} {}".format(math.cos(random.uniform(1, 10)) * 2, math.sin(random.uniform(1, 10)) * 2)))
 						elif self.canvas.gettags(item)[1] == "medium":
+							winsound.PlaySound("bangMedium.wav", winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
 							self.canvas.data["AsteroidList"].append(self.canvas.create_polygon( self.set_asteroid_coords("small", self.canvas.coords(item)[0], self.canvas.coords(item)[1]), outline="white", fill="", tags="asteroid small {} {}".format(math.cos(random.uniform(1, 10)) * 3, math.sin(random.uniform(1, 10)) * 3)))
-							self.canvas.data["AsteroidList"].append(self.canvas.create_polygon( self.set_asteroid_coords("small", self.canvas.coords(item)[0], self.canvas.coords(item)[1]), outline="white", fill="", tags="asteroid small {} {}".format(math.cos(random.uniform(1, 10)) * 3, math.sin(random.uniform(1, 10)) * 3)))						
+							self.canvas.data["AsteroidList"].append(self.canvas.create_polygon( self.set_asteroid_coords("small", self.canvas.coords(item)[0], self.canvas.coords(item)[1]), outline="white", fill="", tags="asteroid small {} {}".format(math.cos(random.uniform(1, 10)) * 3, math.sin(random.uniform(1, 10)) * 3)))
+						else:
+							winsound.PlaySound("bangSmall.wav", winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
 						
 						self.canvas.delete(item)						
 						self.canvas.data["AsteroidList"].remove(item)
@@ -117,7 +122,11 @@ class game_controller(object):
 		self.canvas.move(self.ship, self.canvas.data["Speed"]["x"],  self.canvas.data["Speed"]["y"] )
 		self.canvas.move(self.flame, self.canvas.data["Speed"]["x"],  self.canvas.data["Speed"]["y"] )
 		
-		self.root.after(20, self.moveit)
+		if self.canvas.data["Play"] == True:
+			self.root.after(20, self.moveit)
+		elif self.canvas.data["Play"] == False:
+			self.canvas.data["Play"] = None
+			self.new_game()
 	
 	def	any_key(self, event=None):
 		print(event.keysym)
@@ -126,6 +135,7 @@ class game_controller(object):
 		if self.shot:
 			pass
 		else:
+			winsound.PlaySound("fire.wav", winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
 			self.canvas.data["BulletList"].append([self.canvas.create_oval(self.canvas.coords(self.ship)[0]-1, self.canvas.coords(self.ship)[1]-1, self.canvas.coords(self.ship)[0]+1, self.canvas.coords(self.ship)[1]+1, tag="bullet", outline="white"), math.cos(self.faceDir) * 10, math.sin(self.faceDir) * 10 ])
 			self.shot = True
 			
@@ -197,13 +207,57 @@ class game_controller(object):
 		
 		return coords
 			
-	def generate_asteroids(self, num=5):
+	def generate_asteroids(self, num=2):
 		for i in range(num):
 			self.canvas.data["AsteroidList"].append(self.canvas.create_polygon( self.set_asteroid_coords("big"), outline="white", fill="", tags="asteroid big  {} {}".format(math.cos(random.uniform(1, 10)), math.sin(random.uniform(-5, 5)))))
+
+	def create_menu(self):
+		
+#		self.divLine = self.canvas.create_rectangle(400, 0, 600, 400, fill="black", outline="white")
+		
+		self.button1 = Button(self.canvas, text = "New game", anchor = W, command = self.new_game)
+		self.button1.place(x=460,y=25)
+		self.button2 = Button(self.canvas, text = "Quit", anchor = W, command = self.quit)
+		self.button2.place(x=530,y=25)	
 	
+	def new_game(self):
+		if self.canvas.data["Play"] == None:
+			for bullet in self.canvas.data["BulletList"]:
+				self.canvas.delete(bullet[0])			
+			for asteroid in self.canvas.data["AsteroidList"]:
+				self.canvas.delete(asteroid)					
+
+			self.canvas.data["AsteroidList"] = []
+			self.canvas.data["BulletList"] = []
+			
+			if hasattr(self, 'ship'):
+				self.canvas.delete(self.ship)
+			
+			
+			self.generate_asteroids(4)
+			
+			self.canvas.data["Speed"] = {'x': 0, 'y':0}
+			self.ship = self.canvas.create_polygon( [200, 189, 193, 211, 197, 207, 203, 207, 207, 211], outline="white", fill="", tag="ship")
+			self.flame = self.canvas.create_polygon( [198, 207, 200, 212, 202, 207, 198, 207], outline="white", fill="", tag="flame", state=HIDDEN)
+			
+			self.dirDict = {'Up':0.3, 'Down':-0.3, 'Left':2, 'Right':-2}
+			self.faceDir = -math.pi / 2
+			self.moveDir = -math.pi / 2
+			self.shot = False
+			
+			self.canvas.data["Play"] = True		
+			self.root.after(20, self.moveit)
+		elif self.canvas.data["Play"] == False:
+			pass
+		elif self.canvas.data["Play"]:
+			self.canvas.data["Play"] = False
+		
+	def quit(self):
+		self.root.destroy()		
+		
 	def __init__(self, root):
 		self.root = root
-		self.canvas = Canvas(root, width=400, height=400, bg="black")
+		self.canvas = Canvas(root, width=600, height=400, bg="black")
 		
 		self.canvas.pack()
 		
@@ -216,24 +270,15 @@ class game_controller(object):
 		self.root.bind('<space>', self.shoot)
 		self.root.bind('<KeyRelease-space>', self.release)
 		
-		self.ship = self.canvas.create_polygon( [200, 189, 193, 211, 197, 207, 203, 207, 207, 211], outline="white", fill="", tag="ship")
-		self.flame = self.canvas.create_polygon( [198, 207, 200, 212, 202, 207, 198, 207], outline="white", fill="", tag="flame", state=HIDDEN)
-		
-		self.dirDict = {'Up':0.3, 'Down':-0.3, 'Left':2, 'Right':-2}
-		self.faceDir = -math.pi / 2
-		self.moveDir = -math.pi / 2
-		self.shot = False
+		self.create_menu()
 		
 		self.canvas.data = { }
+		self.canvas.data["Play"] = None
+		self.canvas.data["AsteroidTypes"] = {}
 		self.canvas.data["BulletList"] = []
 		self.canvas.data["AsteroidList"] = []
-		self.canvas.data["AsteroidTypes"] = {}
+		
 		self.set_asteroid_types()
-		self.generate_asteroids()
-		
-		self.canvas.data["Speed"] = {'x': 0, 'y':0}
-		
-		self.root.after(20, self.moveit)
 		
 if __name__ == "__main__":
 	root = Tk()
