@@ -13,7 +13,7 @@ from tkinter import *
 import random
 import math
 import time
-import winsound
+#import winsound
 from threading import *
 from tkinter.font import Font
 
@@ -327,8 +327,8 @@ class GravityBomb(Board):
 		):
 		
 		super().__init__(coordinates, outline, fill, tag, state)
-		self.timer = random.uniform(200, 255)
-		self.reference = Board.canvas.create_oval( self.coordinates, outline=self.outline, fill=self.fill, tag=self.tag, state=self.state )
+		self.timer = 1000
+		self.reference = Board.canvas.create_oval( self.coordinates, outline=self.outline, fill=self.fill, tag=self.tag, state=self.state, width=10)
 		
 		Board.objectList[self.reference] = self
 		
@@ -414,18 +414,18 @@ class Asteroid(Board):
 		
 		if self.size == "big":
 			Board.score+=100
-			winsound.PlaySound(_bangLarge, winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
+#			winsound.PlaySound(_bangLarge, winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
 			if type == "bullet":
 				Board.generate_asteroids(2, Board.canvas.coords(self.reference)[0], Board.canvas.coords(self.reference)[1], "medium")
 
 		elif self.size == "medium":
 			Board.score+=200
-			winsound.PlaySound(_bangMedium, winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
+#			winsound.PlaySound(_bangMedium, winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
 			if type == "bullet":
 				Board.generate_asteroids(2, Board.canvas.coords(self.reference)[0], Board.canvas.coords(self.reference)[1], "small")
 		elif self.size == "small":
 			Board.score+=300
-			winsound.PlaySound(_bangSmall, winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
+#			winsound.PlaySound(_bangSmall, winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
 		
 		del self.objectList[self.reference]
 		super().destroy()
@@ -532,7 +532,7 @@ class Ship(Vehicle):
 		
 	def destroy(self):
 		Ship.exist = False
-		winsound.PlaySound(_bangSmall, winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
+#		winsound.PlaySound(_bangSmall, winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
 		
 		super().destroy()
 
@@ -932,7 +932,55 @@ class game_controller(object):
 							outline="#" + '{0:x}{0:x}{0:x}'.format( 
 							math.floor(random.uniform(13, 13 + object.charge )) )
 						)						
-						
+
+				elif Board.canvas.gettags(id)[0] == 'gravity':
+					if object.timer == 0:
+						object.destroy()
+					else:
+						for item in object.get_overlapping():
+							if Board.canvas.gettags(item)[0] == 'gravity' or Board.canvas.gettags(item)[0] == 'ship':
+								continue
+							elif Board.canvas.gettags(item)[0] not in ['ship', 'gravity', 'explosion', 'flame', 'shield', 'nuklear']:
+								Explosion( coordinates=object.get_scaled_coordinates_by_center(5) )
+								Board.objectList[item].destroy()
+								
+								self.update_score()
+								break
+								
+						for _id, _object in Board.objectList.copy().items():
+							if Board.canvas.gettags(_id) and Board.canvas.gettags(_id)[0] not in ['ship', 'gravity', 'explosion', 'flame', 'shield', 'nuklear']:
+								
+								face = _object.get_target_angle(object)
+								
+								x1, y1 = _object.get_center()
+								x2, y2 =  object.get_center()
+								
+								dist = 5 / ( abs(math.hypot(x2 - x1, y2 - y1)) / 5)
+								if dist > 15: dist = 15
+								
+								if _object.dx + math.cos(face) > -3 and _object.dx + math.cos(face) < 3 :
+									_object.dx += math.cos(face) * dist
+								elif (_object.dx < -3 and math.cos(face) > 0) or (_object.dx > 3 and math.cos(face) < 0):
+									_object.dx += math.cos(face) * dist
+									
+								if _object.dy + math.sin(face)*-1 > -3 and _object.dy + math.sin(face)*-1 < 3 :	
+									_object.dy += math.sin(face)*-1 * dist
+								elif (_object.dy < -3 and math.sin(face)*-1 > 0) or (_object.dy > 3 and math.sin(face)*-1 < 0):
+									_object.dy += math.sin(face)*-1 * dist
+									
+#								print(face, math.cos(face), math.sin(face))
+								
+						Board.canvas.itemconfig(object.reference, 
+							fill="#" + '{0:x}{0:x}{0:x}'.format( 
+							math.floor(random.uniform(16, 50 )) ), 
+							
+							outline="#" + '{0:x}{0:x}{0:x}'.format( 
+							math.floor(random.uniform(16, 50 )) ),
+							
+							width=math.floor(random.uniform(16, 50 ))
+						)
+						object.timer -=1
+
 				elif Board.canvas.gettags(id)[0] == 'nuke':
 					if object.is_outbound():
 						object.destroy()
@@ -1144,7 +1192,7 @@ class game_controller(object):
 			if Ship.shot:
 				pass
 			else:
-				winsound.PlaySound(_fire, winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
+#				winsound.PlaySound(_fire, winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
 				
 				Bullet(
 				[
@@ -1157,13 +1205,32 @@ class game_controller(object):
 				
 	def unbullet(self, event=None):
 		Ship.shot = False
+
+	def	gravity(self, event=None):
+		if Ship.exist:
+			if Ship.shot:
+				pass
+			else:
+#				winsound.PlaySound(_fire, winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
+				
+				GravityBomb(
+				[
+					Board.canvas.coords(self.ship.reference)[0]-30, 
+					Board.canvas.coords(self.ship.reference)[1]-30, 
+					Board.canvas.coords(self.ship.reference)[0]+30, 
+					Board.canvas.coords(self.ship.reference)[1]+30
+				])
+				Ship.shot = True
+				
+	def ungravity(self, event=None):
+		Ship.shot = False
 		
 	def	cluster(self, event=None):
 		if Ship.exist:
 			if Ship.shot:
 				pass
 			elif self.currentCluster > 0:
-				winsound.PlaySound(_fire, winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
+#				winsound.PlaySound(_fire, winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
 				
 				ClusterBomb(
 				[
@@ -1184,7 +1251,7 @@ class game_controller(object):
 			if Ship.shot:
 				pass
 			else:
-				winsound.PlaySound(_fire, winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
+#				winsound.PlaySound(_fire, winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
 				
 				Plague(
 				[
@@ -1203,7 +1270,7 @@ class game_controller(object):
 			if Ship.shot:
 				pass
 			elif self.currentEnergy >= 5:
-				winsound.PlaySound(_fire, winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
+#				winsound.PlaySound(_fire, winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
 				
 				Lazer(
 				[
@@ -1224,7 +1291,7 @@ class game_controller(object):
 			if Ship.shot:
 				pass
 			elif self.currentEnergy >= 5:
-				winsound.PlaySound(_fire, winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
+#				winsound.PlaySound(_fire, winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
 				
 				Beam(
 				[
@@ -1246,7 +1313,7 @@ class game_controller(object):
 	def uncharge(self, event=None):
 		self.ship.charging = False	
 		if self.ship.charge >= 5:
-			winsound.PlaySound(_fire, winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
+#			winsound.PlaySound(_fire, winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
 			ChargedBullet(
 			[
 				Board.canvas.coords(self.ship.reference)[0]-self.ship.charge, 
@@ -1263,7 +1330,7 @@ class game_controller(object):
 			if Ship.shot:
 				pass
 			elif self.currentFleet > 0:
-				winsound.PlaySound(_fire, winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
+#				winsound.PlaySound(_fire, winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
 
 				Rocket(
 					offset=[
@@ -1284,7 +1351,7 @@ class game_controller(object):
 			if Ship.shot:
 				pass
 			elif self.currentNukes > 0:
-				winsound.PlaySound(_fire, winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
+#				winsound.PlaySound(_fire, winsound.SND_ALIAS|winsound.SND_ASYNC|winsound.SND_NOWAIT)
 				
 				Nuke(
 				[
@@ -1343,7 +1410,7 @@ class game_controller(object):
 			
 			Ship.shot = False
 			
-			self.currentAsteroidNum = 10
+			self.currentAsteroidNum = 20
 			Board.generate_asteroids(self.currentAsteroidNum)
 			
 			Board.canvas.itemconfig(self.title, state=HIDDEN)
@@ -1387,6 +1454,9 @@ class game_controller(object):
 		
 		self.root.bind('w', self.charge)
 		self.root.bind('<KeyRelease-w>', self.uncharge)
+
+		self.root.bind('d', self.gravity)
+		self.root.bind('<KeyRelease-d>', self.ungravity)
 		
 		self.root.bind('s', self.nuke)
 		self.root.bind('<KeyRelease-s>', self.unnuke)
